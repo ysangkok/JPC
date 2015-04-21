@@ -1,0 +1,23 @@
+apply plugin: 'java'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/'
+        }
+        resources {
+            srcDir file('.') include 'resources/' 
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+            "Implementation-Title": "JPC Application",
+            "Author": "Ian Preston",
+            "Main-Class": "org.jpc.j2se.JPCApplication",
+            "Default-Args": "-fda mem:resources/images/floppy.img -hda mem:resources/images/dosgames.img -boot fda"
+        )
+    }
+}
