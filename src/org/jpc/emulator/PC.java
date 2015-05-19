@@ -163,7 +163,8 @@ public class PC {
         keyboard = new Keyboard();
         parts.add(keyboard);
         parts.add(new FloppyController());
-        parts.add(new PCSpeaker());
+        if (!Option.no_pc_speaker.isSet())
+            parts.add(new PCSpeaker());
 
         //PCI Stuff
         parts.add(new PCIHostBridge());

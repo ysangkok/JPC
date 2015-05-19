@@ -103,6 +103,8 @@ public abstract class Option {
     public static final Opt oplemu = opt("oplemu");
     public static final Opt oplrate = opt("oplrate");
 
+    public static final Switch no_pc_speaker = createSwitch("no-pc-speaker");
+
     public static void printHelp() {
         System.out.println("JPC Help");
         System.out.println("Parameters may be specified on the command line or in a file. ");

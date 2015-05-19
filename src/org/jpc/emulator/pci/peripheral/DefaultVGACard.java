@@ -33,14 +33,26 @@
 
 package org.jpc.emulator.pci.peripheral;
 
-import java.awt.Dimension;
+import org.jpc.interop.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
+
 import javax.imageio.ImageIO;
+
+import org.jpc.interop.IPCMonitor;
 import org.jpc.j2se.PCMonitor;
 
 /**
@@ -51,8 +63,8 @@ public final class DefaultVGACard extends VGACard {
 
     private int[] rawImageData;
     private int xmin,  xmax,  ymin,  ymax,  width,  height;
-    private BufferedImage buffer;
-    PCMonitor monitor;
+    //private BufferedImage buffer;
+    IPCMonitor monitor;
 
     public DefaultVGACard() 
     {
@@ -85,27 +97,57 @@ public final class DefaultVGACard extends VGACard {
         this.width = width;
         this.height = height;
 
-        buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        buffer.setAccelerationPriority(1);
-        DataBufferInt buf = (DataBufferInt) buffer.getRaster().getDataBuffer();
-        rawImageData = buf.getData();
+        //buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        //buffer.setAccelerationPriority(1);
+        //DataBufferInt buf = (DataBufferInt) buffer.getRaster().getDataBuffer();
+        //rawImageData = new int[width * height];
+        int[] old = rawImageData;
         monitor.resizeDisplay(width, height);
+        if (rawImageData == old) throw new RuntimeException("unexpected");
+    }
+
+    public void setDisplayBuffer(int[] buf, int width, int height) {
+        this.rawImageData = buf;
+        this.width = width;
+        this.height = height;
     }
 
     public void saveScreenshot()
     {
-        File out = new File("Screenshot.png");
-        try
-        {
-            ImageIO.write(buffer, "png", out);
+        File dir = monitor.saveScreenshot();
+
+        try {
+            FileOutputStream f;
+            OutputStream dos = new GZIPOutputStream(f=new FileOutputStream(new File(dir.getPath() + "/raw.ppm.gz")));
+            dos.write(String.format("P3\n%d %d\n255\n", width, height).getBytes(Charset.defaultCharset()));
+            for (int i : rawImageData) {
+                ByteBuffer bb = ByteBuffer.allocate(4);
+                int j = 0;
+                for (byte b : bb.putInt(i).array())
+                    if (j++ == 2)
+                        break;
+                    else
+                        dos.write((String.valueOf(b & 0xff) + " ").getBytes(Charset.defaultCharset()));
+            }
+            dos.close();
+            f.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+        //if (true) throw new RuntimeException("unexpected");
+
+
+//        try
+//        {
+//            ImageIO.write(buffer, "png", out);
+//        }
+//        catch (IOException e)
+//        {
+//            e.printStackTrace();
+//        }
     }
 
-    public void setMonitor(PCMonitor mon) {
+    public void setMonitor(IPCMonitor mon) {
         this.monitor = mon;
     }
 
@@ -129,10 +171,11 @@ public final class DefaultVGACard extends VGACard {
 
     public void paintPCMonitor(Graphics2D g, PCMonitor monitor)
     {
-        Dimension s = monitor.getSize();
+        if (true) throw new RuntimeException("unexpected");
+        java.awt.Dimension s = monitor.getSize();
         
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        g.drawImage(buffer, 0, 0, s.width,  s.height, 0, 0, width, height, null);
+        //g.drawImage(rawImageData, 0, 0, s.width,  s.height, 0, 0, width, height, null);
     }
 
     public final void prepareUpdate() 

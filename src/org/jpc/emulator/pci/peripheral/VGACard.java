@@ -40,10 +40,12 @@ import org.jpc.emulator.memory.*;
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.HardwareComponent;
 
-import java.awt.*;
+import org.jpc.interop.Dimension;
+
 import java.io.*;
 import java.util.logging.*;
-import org.jpc.j2se.PCMonitor;
+
+import org.jpc.interop.IPCMonitor;
 
 /**
  *
@@ -2666,7 +2668,7 @@ public abstract class VGACard extends AbstractPCIDevice implements IODevice
         }
     }
 
-    public abstract void setMonitor(PCMonitor mon);
+    public abstract void setMonitor(IPCMonitor mon);
 
     public String toString()
     {

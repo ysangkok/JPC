@@ -33,7 +33,9 @@
 
 package org.jpc.j2se;
 
+import org.jpc.interop.Dimension;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.io.*;
 
 import javax.swing.JScrollPane;
@@ -46,8 +48,7 @@ import org.jpc.emulator.peripheral.*;
  * 
  * @author Rhys Newman
  */
-public class PCMonitor extends KeyHandlingPanel 
-{
+public class PCMonitor extends KeyHandlingPanel implements org.jpc.interop.IPCMonitor {
     private Keyboard keyboard;
     private DefaultVGACard vgaCard;
     private Updater updater;
@@ -85,7 +86,8 @@ public class PCMonitor extends KeyHandlingPanel
         return pc;
     }
 
-    public void saveState(OutputStream out) throws IOException 
+    @Override
+    public void saveState(OutputStream out) throws IOException
     {
         int[] rawImageData = vgaCard.getDisplayBuffer();
         byte[] dummy = new byte[rawImageData.length * 4];
@@ -103,7 +105,8 @@ public class PCMonitor extends KeyHandlingPanel
         out.flush();
     }
 
-    public void loadState(InputStream in) throws IOException 
+    @Override
+    public void loadState(InputStream in) throws IOException
     {
         DataInputStream input = new DataInputStream(in);
         int len = input.readInt();
@@ -124,45 +127,51 @@ public class PCMonitor extends KeyHandlingPanel
         }
     }
 
-    public void setFrame(Component f) 
+    public void setFrame(Component f)
     {
         this.frame = f;
     }
 
-    public void repeatedKeyPress(int keyCode) 
+    @Override
+    public void mouseExited(MouseEvent e) {
+        super.mouseExited(e);
+    }
+
+    @Override
+    public void keyPressed(int keyCode)
     {
         keyboard.keyPressed(KeyMapping.getScancode(Integer.valueOf(keyCode)));
     }
 
-    public void keyPressed(int keyCode) 
-    {
-        keyboard.keyPressed(KeyMapping.getScancode(Integer.valueOf(keyCode)));
-    }
-
-    public void keyReleased(int keyCode) 
+    @Override
+    public void keyReleased(int keyCode)
     {
         keyboard.keyReleased(KeyMapping.getScancode(Integer.valueOf(keyCode)));
     }
 
-    public void mouseEventReceived(int dx, int dy, int dz, int buttons) 
+    @Override
+    public void mouseEventReceived(int dx, int dy, int dz, int buttons)
     {
         keyboard.putMouseEvent(dx, dy, dz, buttons);
     }
 
-    public synchronized void startUpdateThread() 
+    @Override
+    public synchronized void startUpdateThread()
     {
         stopUpdateThread();
         updater = new Updater();
         updater.start();
     }
 
-    public synchronized void stopUpdateThread() 
+    @Override
+    public synchronized void stopUpdateThread()
     {
         if (updater != null)
             updater.halt();
     }
 
-    public synchronized boolean isRunning() 
+    @Override
+    public synchronized boolean isRunning()
     {
         if (updater == null)
             return false;
@@ -213,7 +222,8 @@ public class PCMonitor extends KeyHandlingPanel
         }
     }
 
-    public void resizeDisplay(int width, int height) 
+    @Override
+    public void resizeDisplay(int width, int height)
     {
 		resizeDisplayCommon((int)(width * scaleX), (int)(height * scaleY));
     }
@@ -221,16 +231,17 @@ public class PCMonitor extends KeyHandlingPanel
     {
     	//System.out.println("resized X="+width+" Y="+height);
     	//System.out.println("resized scaleX="+scaleX+" scaleY="+scaleY);
-        setPreferredSize(new Dimension(width, height));
-        setMaximumSize(new Dimension(width, height));
-        setMinimumSize(new Dimension(width, height));
+        setPreferredSize(new java.awt.Dimension(width, height));
+        setMaximumSize(new java.awt.Dimension(width, height));
+        setMinimumSize(new java.awt.Dimension(width, height));
 
         clearBackground = true;
         revalidate();
         repaint();
     }
 
-    public void scaleDisplay(int width, int height) 
+    @Override
+    public void scaleDisplay(int width, int height)
     {
         
     	Dimension display = vgaCard.getDisplaySize();
@@ -249,17 +260,24 @@ public class PCMonitor extends KeyHandlingPanel
     	//System.out.println("scale display scaleX="+scaleX+" scaleY="+scaleY + "actual x="+displayWidth+" y="+displayHeight);
     }
 
-    public void update(Graphics g) 
+    @Override
+    public File saveScreenshot() {
+        throw new RuntimeException("when running on j2se, the method in DefaultVGACard shouldnt call PCMonitors screenshot method");
+    }
+
+    @Override
+    public void update(Graphics g)
     {
         paint(g);
     }
 
-    public void paint(Graphics g) 
+    @Override
+    public void paint(Graphics g)
     {
         if (clearBackground)
         {
             g.setColor(Color.white);
-            Dimension s1 = getSize();
+            java.awt.Dimension s1 = getSize();
             Dimension s2 = vgaCard.getDisplaySize();
 
             if (s1.width > s2.width)
